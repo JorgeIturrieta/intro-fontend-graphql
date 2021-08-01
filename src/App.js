@@ -1,24 +1,34 @@
-import React ,{useState} from 'react'
-import {  useQuery,useApolloClient } from '@apollo/client';
+import React, { useState } from 'react'
+import { useQuery, useSubscription, useApolloClient } from '@apollo/client';
 import { Persons } from './components/Persons';
 import { PersonForm } from './components/PersonForm';
-import { ALL_PERSONS } from './queries';
+import { ALL_PERSONS, PERSON_ADDED } from './queries';
 import { PhoneForm } from './components/PhoneForm';
 import { Notify } from './components/Notify';
 import { LoginForm } from './components/LoginForm';
 import { Logout } from './components/Logout';
-
-
+import { useUpdateCache } from './hooks/useUpdateCache';
 
 
 const App = () => {
   const [token, setToken] = useState(null)
-
   const result = useQuery(ALL_PERSONS)
-  const client = useApolloClient() // Objeto client para limpiar la cache 
+  const client = useApolloClient() // Objeto client para manejar la cache 
   const [errorMessage, setErrorMessage] = useState(null)
+  const [updateCacheWith] = useUpdateCache()
 
-  
+
+
+  // Subscripcion 
+  useSubscription(PERSON_ADDED, {
+    onSubscriptionData: ({ subscriptionData }) => {
+      const addedPerson = subscriptionData.data.personAdded
+      updateCacheWith(addedPerson)
+      notify(`${addedPerson.name} añadida`)
+    }
+  })
+
+
   const notify = (message) => {
     setErrorMessage(message)
     setTimeout(() => {
@@ -32,7 +42,7 @@ const App = () => {
     await client.resetStore()
   }
 
-  if (result.loading)  {
+  if (result.loading) {
     return <div>loading...</div>
   }
 
@@ -52,13 +62,13 @@ const App = () => {
 
   return (
     <>
-    <Logout logout={logout} />
-    <Notify errorMessage={errorMessage} />
-    <Persons persons = {result.data.allPersons} />
-    <PersonForm setError={notify}  />
-    <PhoneForm  setError={notify}   />
+      <Logout logout={logout} />
+      <Notify errorMessage={errorMessage} />
+      <Persons persons={result.data.allPersons} />
+      <PersonForm setError={notify} />
+      <PhoneForm setError={notify} />
     </>
-    
+
   )
 }
 
