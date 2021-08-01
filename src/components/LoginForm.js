@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { useMutation } from '@apollo/client'
+import { useMutation,useApolloClient } from '@apollo/client'
 import { LOGIN } from '../queries'
 
 export const LoginForm = ({ setError, setToken }) => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-
+  const client = useApolloClient() 
   const [ login, result ] = useMutation(LOGIN, {
     onError: (error) => {
       setError(error.graphQLErrors[0].message)
-    }
+    },   
   })
 
   useEffect(() => {
@@ -23,8 +23,8 @@ export const LoginForm = ({ setError, setToken }) => {
 
   const submit = async (event) => {
     event.preventDefault()
-
-    login({ variables: { username, password } })
+    await login({ variables: { username, password } })
+    await client.resetStore()
   }
 
   return (
